@@ -1,0 +1,11 @@
+{
+  "validated": true,
+  "counts": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ci_run": "41468788223",
+  "source_commit": "1c85228dc7508e13a536bf104c3b01fe77fdc9d5"
+}

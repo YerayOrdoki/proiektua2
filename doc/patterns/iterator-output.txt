@@ -1,0 +1,9 @@
+FROM LAST TO FIRST
+3;Keyboard;35.0
+2;Monitor;85.0
+1;Bicycle;120.0
+
+FROM FIRST TO LAST
+1;Bicycle;120.0
+2;Monitor;85.0
+3;Keyboard;35.0
