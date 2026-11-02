@@ -1,42 +1,43 @@
 # Patroiak Proiektua 26
 
 Repositorio: YerayOrdoki/proiektua2. Rama: patroiak-proiektua26.
-Base: 05510415231a40dfa3946b4ce976957e9edc9503.
 Requisitos: patroiakProiektua26.pdf, paginas 1-5.
 
-## Factory Method
-Creator: BLFactory.Creator. Factory Method: create(). ConcreteCreator: LocalCreator y RemoteCreator. Product: BLFacade. ConcreteProduct: BLFacadeImplementation y RemoteFacade. BLFactory selecciona el Creator segun el booleano recibido de la presentacion. No es solo un if: cada Creator sobrescribe create. Se pueden inyectar creadores que devuelvan mocks de Mockito. ApplicationLauncher lee ConfigXML y obtiene la fachada mediante la factoria, sin construir DataAccess ni configurar SOAP. La red y la DB se resuelven fuera del EDT; las ventanas se crean dentro del EDT.
+## Factory Method: version simplificada
+El enunciado pide centralizar la obtencion de la logica de negocio en una factoria y mantener la decision local/remota en la presentacion. Se conserva la llamada del ejemplo: new BLFactory().getBusinessLogicFactory(isLocal).
+
+BLFactory es el Creator. BLFacade es el Product. BLFacadeImplementation y RemoteFacade son los ConcreteProduct. getBusinessLogicFactory recibe el booleano y utiliza un if/else: si es true llama a createLocalBusinessLogic; si es false llama a createRemoteBusinessLogic. El primer metodo devuelve new BLFacadeImplementation(); el segundo devuelve RemoteFacade.connect(). Ambos devuelven BLFacade.
+
+No hay clases Creator, LocalCreator ni RemoteCreator anidadas, atributos de creadores, constructores de inyeccion, Objects.requireNonNull ni operador ternario en BLFactory. Es una factoria parametrizada con dos metodos de creacion protegidos y sobrescribibles; no se presenta como una jerarquia productiva de creadores concretos. Esos dos metodos separan la construccion y permiten sustituirla en pruebas sin acceder a la DB ni a la red. La subclase anonima que devuelve mocks existe solo en la prueba, no en el codigo de la aplicacion.
+
+El recorrido es: ApplicationLauncher lee ConfigXML, pide la fachada a BLFactory y la entrega a MainGUI. ApplicationLauncher ya no construye DataAccess ni prepara SOAP. Se mantiene el arranque Swing existente de esta rama para no mezclar cambios de interfaz con esta simplificacion.
 
 ## Iterator
-ExtendedIterator<T> extiende Iterator<T>. ListExtendedIterator copia la pertenencia a la lista, no clona los Sale. El cursor indica el elemento actual: next devuelve ese elemento e incrementa; previous lo devuelve y decrementa. goFirst establece 0; goLast establece size-1 para no omitir el ultimo elemento. No es la semantica de ListIterator. Mezclar next y previous sin reposicionar sigue ese mismo cursor, segun el comentario del PDF. El agotamiento lanza NoSuchElementException; remove no esta permitido. Se cubren listas vacias, un elemento, cambios de direccion y snapshot. BLFacade y BLFacadeImplementation exponen getSalesIterator(String desc) reutilizando getSales(desc). La sobrecarga sin parametros usa la busqueda vacia, por la inconsistencia entre firma y ejemplo del enunciado. PatternsDemo imprime primero el recorrido inverso y despues el directo.
+ExtendedIterator<T> extiende Iterator<T> y agrega previous, hasPrevious, goFirst y goLast. ListExtendedIterator guarda una copia superficial de la lista y un cursor. goFirst lo situa en 0 y goLast en size-1. next devuelve el elemento actual e incrementa; previous lo devuelve y decrementa, siguiendo el comentario del enunciado. No es la semantica de ListIterator. Si se agota el recorrido se lanza NoSuchElementException; remove no se permite. No se cambian estas clases porque ya contienen solo la lista, el cursor y las operaciones solicitadas.
 
-## SOAP y compatibilidad
-El iterador es estado del cliente y no se serializa por SOAP. RemoteBLFacade conserva las 33 operaciones originales y el nombre XML BLFacade. BLFacade extiende ese contrato y agrega la iteracion local. BLFacadeImplementation publica RemoteBLFacade. RemoteFacade delega las operaciones del servicio y hereda la construccion local del iterador. Es necesario reiniciar el servidor con el codigo de esta rama. Las pruebas con mocks no certifican SOAP extremo a extremo ni ObjectDB real. BLFacadeImplementation conserva sus operaciones anteriores, reformateadas, cambia endpointInterface y agrega getSalesIterator. No se corrigen otros problemas historicos de conexiones.
+BLFacade y BLFacadeImplementation ofrecen getSalesIterator(String desc) reutilizando getSales(desc). La sobrecarga sin parametros usa busqueda vacia porque el ejemplo del PDF omite el argumento. PatternsDemo imprime del ultimo al primero y despues del primero al ultimo.
 
 ## Adapter
-Target: TableModel. AbstractTableModel implementa parte de ese contrato. Adapter: SellerAdapter. Adaptee: Seller y sus Sale. Client: JTable, creada dentro de SellerTable. getRowCount corresponde al numero de ventas; getValueAt traduce los getters de Sale a celdas. Las columnas son Sale, Title, Description, Status, Price y Publication date; sus tipos son Integer, String, String, Integer, Float y Date, incluso sin filas. El modelo no permite editar y copia la pertenencia a la lista. Seller.sales es XmlTransient: el ejemplo remoto carga getSalesBySeller(email) y usa la sobrecarga que recibe la lista. isLogged devuelve Emaitza en este proyecto, no Seller; la demostracion resuelve el vendedor por email en lugar de copiar ese error del ejemplo del PDF. La extraccion textual del PDF no permite verificar las cabeceras de su imagen: se documentan expresamente las seis columnas elegidas.
+SellerAdapter extiende AbstractTableModel y adapta las ventas de Seller a JTable. Target: TableModel. Adapter: SellerAdapter. Adaptee: Seller y Sale. Client: JTable dentro de SellerTable. Una venta es una fila. getValueAt traduce getters a celdas; getColumnClass declara tipos sin leer una primera fila que podria no existir.
 
-## Ejecutar la aplicacion
-Requisitos: JDK 11 y Maven. No se cambia config.xml ni se sobrescriben bases de datos. Para trabajar localmente, configurar businessLogic local="true". Para inicializar los datos del enunciado, usar initialize="true" en una copia de desarrollo, arrancar una vez y devolverlo a false. No se hace automaticamente porque puede afectar a datos existentes. En modo remoto, configurar host y puerto alcanzables, mantener local="false" y arrancar businessLogic.BusinessLogicServer antes del cliente. Los recursos y dependencias existentes del proyecto deben estar en el classpath de ejecucion.
+Las seis columnas son Sale, Title, Description, Status, Price y Publication date; sus tipos son Integer, String, String, Integer, Float y Date. El modelo es de solo lectura y copia la pertenencia a la lista. La extraccion textual del PDF no permite contrastar las cabeceras de su imagen, por lo que no se afirma una coincidencia visual exacta. No se reestructura este Adapter porque ya sigue directamente el esquema AbstractTableModel del material.
 
-```sh
-mvn -B package -DskipTests
-mvn -q org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass=patterns.demo.PatternsDemo -Dexec.args="seller1@gmail.com"
-```
+## Por que se mantiene la separacion SOAP
+RemoteBLFacade conserva las 33 operaciones originales del servicio y el nombre XML BLFacade. BLFacade extiende ese contrato y agrega el iterador local. RemoteFacade delega las operaciones originales y construye el iterador en el cliente. Esta separacion evita intentar serializar un Iterator por SOAP y no se elimina solo para reducir lineas. El servidor debe reiniciarse con el codigo de esta rama. No se certifica SOAP extremo a extremo ni ObjectDB real mediante mocks.
 
-El argumento es el email de un vendedor existente; el segundo argumento opcional filtra las ventas del iterador. La ventana muestra todas las ventas del vendedor. Se puede ejecutar patterns.demo.PatternsDemo desde Eclipse con los mismos argumentos.
+Seller.sales es XmlTransient: en modo remoto PatternsDemo obtiene las ventas con getSalesBySeller(email) y las pasa a SellerTable. isLogged devuelve Emaitza en este proyecto, no Seller como supone el ejemplo del PDF; por eso la demostracion obtiene el vendedor por email.
 
-## Pruebas y evidencias
-PatternsTest contiene ocho pruebas: ordenes y limites, vacio/un elemento, snapshot/cambio de direccion, seleccion de Creator con Mockito, busqueda local con DataAccess mock, iterador remoto cliente con mock SOAP, mapeo/tipos del Adapter y vendedores vacios/remotos. PatternsScreenshotTest agrega una prueba con datos deterministas no persistidos que ejecuta los ejemplos y captura ventanas Swing reales mediante Robot bajo Xvfb. No son imagenes inventadas ni capturas de los datos personales del usuario. Sin servidor grafico la prueba se omite y la entrega se rechaza como no validada.
+## Ejecutar
+Requisitos: JDK 11, Maven y los recursos originales del proyecto en el classpath. Se puede ejecutar patterns.demo.PatternsDemo desde Eclipse: primer argumento, email de un vendedor existente; segundo argumento opcional, filtro del iterador. La tabla muestra todas las ventas del vendedor.
 
-```sh
-xvfb-run -a mvn -B test -Dtest=PatternsTest,PatternsScreenshotTest
-plantuml -charset UTF-8 -tpng doc/patterns/*.puml
-pip install reportlab python-docx
-python tools/build-patterns-docs.py
-```
+No se cambia config.xml ni se sobrescriben bases de datos. Para negocio local poner businessLogic local="true". Para inicializar los datos del enunciado, utilizar initialize="true" en una copia de desarrollo, arrancar una vez y volver a false. Para negocio remoto poner local="false", configurar un host/puerto alcanzable y arrancar businessLogic.BusinessLogicServer antes del cliente.
 
-El workflow patterns-delivery comprueba los XML de Surefire: al menos nueve pruebas y cero fallos, errores u omisiones. Es importante porque el pom historico ignora fallos de test. Solo con las pruebas y capturas presentes genera patters.pdf en la raiz y doc/patterns/patroiak.docx, con UML ampliado, explicaciones, capturas y codigo fuente numerado. Guarda esos resultados automaticamente en esta misma rama, nunca en master. Los informes se conservan como artefactos de Actions incluso si falla la ejecucion. Un workflow preparado no equivale a una ejecucion exitosa: consultar validation.json y los informes generados.
+## Pruebas y documentos
+PatternsTest conserva ocho pruebas de Iterator, Factory, acceso local con mock, delegacion remota con mock y Adapter. La prueba de la factoria sobrescribe sus dos metodos protegidos con fachadas mock y comprueba que solo se llama al correspondiente. PatternsScreenshotTest agrega una prueba de ventanas Swing reales con fixtures no persistidos y captura con Robot bajo Xvfb. No se usan datos personales ni se inventan imagenes.
 
-## Entrega y OneDrive
-El enunciado exige entregar la URL del proyecto y tener patters.pdf en el repositorio. El Word es adicional, compatible con Word de OneDrive. No se ha subido a OneDrive: la carga directa requiere conectar Microsoft 365. Los documentos de esta automatizacion solo se generan tras validar las pruebas; los borradores adjuntos anteriores no certifican ejecucion. Quedan fuera de la validacion automatica: SOAP extremo a extremo, ObjectDB real y coincidencia exacta de cabeceras con la imagen del enunciado.
+El workflow existente ejecuta las nueve pruebas, comprueba los XML de Surefire y rechaza fallos, errores u omisiones aunque el pom historico ignore fallos. Despues renderiza los tres UML y regenera patters.pdf, doc/patterns/patroiak.docx, capturas y validation.json en esta misma rama. No modifica master ni sube documentos a OneDrive. Tras este cambio debe comprobarse la nueva ejecucion: el resultado de una version anterior no valida esta version simplificada.
+
+Para reproducir toda la entrega, usar los pasos del workflow .github/workflows/patterns-delivery.yml: pruebas bajo Xvfb, renderizado UML a nombres separados de las capturas y python tools/build-patterns-docs.py.
+
+## Entrega y limites
+El enunciado exige la URL del proyecto con patters.pdf en el repositorio. El documento contiene UML, codigo y explicaciones, y capturas de Iterator y Adapter. El Word es adicional y compatible con Word de OneDrive, pero no esta subido a Microsoft 365. No estan certificados la integracion SOAP real, ObjectDB real ni la coincidencia grafica exacta con la tabla del PDF.

@@ -42,25 +42,25 @@ def picture(name, explanation):
     pdf.append(Image(str(path), width=width*scale, height=height*scale))
     paragraph(explanation)
 
-heading('Patroiak Proiektua 26')
+heading('Patroiak Proiektua 26 - version simplificada')
 paragraph('Factory Method, Iterator y Adapter. YerayOrdoki/proiektua2, rama patroiak-proiektua26.')
-paragraph('Requisitos: patroiakProiektua26.pdf, paginas 1-5. Base revisada: 05510415231a40dfa3946b4ce976957e9edc9503.')
-paragraph('Verificacion automatica: '+str(counts)+'. Capturas de ejecucion Swing con fixtures deterministas, no datos personales ni pruebas SOAP extremo a extremo.')
-for block in (out / 'README.md').read_text(encoding='utf-8').split('\n\n'):
+paragraph('Requisitos: patroiakProiektua26.pdf, paginas 1-5. La factoria se ha simplificado manteniendo su llamada desde la presentacion.')
+paragraph('Verificacion automatica: '+str(counts)+'. Capturas Swing con fixtures deterministas, no datos personales ni pruebas SOAP extremo a extremo.')
+for block in (out / 'README.md').read_text(encoding='utf-8').split(chr(10)*2):
     if block.startswith('## '):
         heading(block[3:], 2)
     elif not block.startswith('# '):
-        paragraph(block.replace('```sh','').replace('```','').replace('\n',' '))
+        paragraph(block.replace('```sh','').replace('```','').replace(chr(10),' '))
 heading('UML ampliado')
 for name, title in [('factory.png','Factory Method'),('iterator-uml.png','Iterator'),('adapter-uml.png','Adapter')]:
     heading(title, 2)
-    picture(name, 'Diagrama UML con las clases y relaciones implementadas; fuente editable en el archivo .puml correspondiente.')
+    picture(name, 'Diagrama UML de la version actual; fuente editable en el archivo .puml correspondiente.')
 heading('Evidencias de ejecucion')
 picture('iterator.png', 'Iterator: primero del ultimo al primero y despues del primero al ultimo, ejecutando PatternsDemo.describe.')
 picture('adapter.png', 'Adapter: ventana SellerTable y JTable reales usando SellerAdapter; datos de demostracion no persistidos.')
 heading('Codigo entregado y lineas importantes')
 notes = {
- 'BLFactory.java': 'Creator.create es el Factory Method; LocalCreator y RemoteCreator lo sobrescriben. La seleccion del modo no contiene la construccion concreta.',
+ 'BLFactory.java': 'Una sola clase y un if/else: el booleano selecciona createLocalBusinessLogic o createRemoteBusinessLogic. Esos dos metodos construyen la fachada y pueden sobrescribirse en pruebas. No hay clases anidadas, atributos de creadores ni constructores de inyeccion.',
  'BLFacade.java': 'getSalesIterator(desc) reutiliza getSales(desc). La sobrecarga sin argumentos usa busqueda vacia.',
  'RemoteBLFacade.java': 'Contrato SOAP original separado del estado local del iterador; conserva las 33 operaciones y el nombre XML BLFacade.',
  'BLFacadeImplementation.java': 'Cambio del endpointInterface a RemoteBLFacade y adicion de getSalesIterator(String); operaciones anteriores conservadas, con reformateo.',
@@ -71,7 +71,7 @@ notes = {
  'SellerAdapter.java': 'getValueAt traduce los campos de Sale a celdas. getColumnClass declara tipos sin depender de que exista una primera fila.',
  'SellerTable.java': 'JTable recibe SellerAdapter como TableModel. La sobrecarga permite pasar ventas obtenidas del servidor remoto.',
  'PatternsDemo.java': 'Demostracion inversa y directa; resuelve Seller por email en lugar de suponer que isLogged devuelve Seller.',
- 'PatternsTest.java': 'Ocho pruebas unitarias de Factory, Iterator y Adapter con mocks para no tocar bases de datos.',
+ 'PatternsTest.java': 'Ocho pruebas unitarias. La prueba de la factoria sobrescribe solo los dos metodos protegidos de creacion para devolver mocks sin DB ni red.',
  'PatternsScreenshotTest.java': 'Ejecuta y captura ventanas Swing reales; la omision por entorno headless impide certificar la entrega.'
 }
 for path in sorted((root / 'src').rglob('*.java')):
@@ -86,7 +86,7 @@ for path in sorted((root / 'src').rglob('*.java')):
     for number, line in enumerate(source.splitlines(), 1):
         lines.extend(textwrap.wrap(f'{number:3} {line}', width=112, replace_whitespace=False, drop_whitespace=False) or [''])
     for start in range(0,len(lines),45):
-        pdf.append(Preformatted('\n'.join(lines[start:start+45]),styles['Code']))
+        pdf.append(Preformatted(chr(10).join(lines[start:start+45]),styles['Code']))
         pdf.append(Spacer(1,8))
 heading('Limitaciones y entrega')
 paragraph('No se certifican SOAP extremo a extremo ni ObjectDB real. Las cabeceras graficas del enunciado requieren contraste visual. El Word es adicional al patters.pdf exigido. No se ha subido ningun archivo a OneDrive.')

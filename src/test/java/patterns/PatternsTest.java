@@ -47,15 +47,25 @@ public class PatternsTest {
         it.goLast();
         assertEquals(Integer.valueOf(3), it.next());
     }
-    @Test public void factoryUsesInjectedCreatorsWithoutDatabase() {
-        BLFacade local = mock(BLFacade.class), remote = mock(BLFacade.class);
-        BLFactory.Creator lc = mock(BLFactory.Creator.class), rc = mock(BLFactory.Creator.class);
-        when(lc.create()).thenReturn(local); when(rc.create()).thenReturn(remote);
-        BLFactory factory = new BLFactory(lc,rc);
+    @Test public void factorySelectsLocalOrRemoteWithoutDatabase() {
+        BLFacade local = mock(BLFacade.class);
+        BLFacade remote = mock(BLFacade.class);
+        int[] calls = {0, 0};
+        // Solo en la prueba se sustituyen los metodos de creacion.
+        BLFactory factory = new BLFactory() {
+            @Override protected BLFacade createLocalBusinessLogic() {
+                calls[0]++;
+                return local;
+            }
+            @Override protected BLFacade createRemoteBusinessLogic() {
+                calls[1]++;
+                return remote;
+            }
+        };
         assertSame(local, factory.getBusinessLogicFactory(true));
-        verify(rc, never()).create();
+        assertArrayEquals(new int[] {1, 0}, calls);
         assertSame(remote, factory.getBusinessLogicFactory(false));
-        verify(lc).create(); verify(rc).create();
+        assertArrayEquals(new int[] {1, 1}, calls);
     }
     @Test public void localFacadeUsesExistingSearch() {
         DataAccess db = mock(DataAccess.class);

@@ -1,32 +1,31 @@
 @startuml
-abstract class "BLFactory.Creator" as Creator {
- +create(): BLFacade
+class BLFactory <<Creator>> {
+ +getBusinessLogicFactory(isLocal: boolean): BLFacade
+ #createLocalBusinessLogic(): BLFacade
+ #createRemoteBusinessLogic(): BLFacade
 }
-class "BLFactory.LocalCreator" as LocalCreator
-class "BLFactory.RemoteCreator" as RemoteCreator
-interface BLFacade {
+interface BLFacade <<Product>> {
  +getSalesIterator(desc): ExtendedIterator<Sale>
 }
 interface RemoteBLFacade
-class BLFacadeImplementation
-class RemoteFacade
-class BLFactory {
- +getBusinessLogicFactory(isLocal): BLFacade
-}
+class BLFacadeImplementation <<ConcreteProduct>>
+class RemoteFacade <<ConcreteProduct>>
 class ApplicationLauncher
-class DataAccess
 class ConfigXML
-Creator <|-- LocalCreator
-Creator <|-- RemoteCreator
-Creator ..> BLFacade : creates
-LocalCreator ..> BLFacadeImplementation : creates
-RemoteCreator ..> RemoteFacade : creates
+class DataAccess
+ApplicationLauncher --> ConfigXML : lee el modo
+ApplicationLauncher --> BLFactory : solicita fachada
+BLFactory ..> BLFacade : devuelve
+BLFactory ..> BLFacadeImplementation : crea en modo local
+BLFactory ..> RemoteFacade : conecta en modo remoto
 BLFacade <|.. BLFacadeImplementation
 BLFacade <|.. RemoteFacade
 RemoteBLFacade <|-- BLFacade
-RemoteFacade --> RemoteBLFacade : SOAP delegate
 BLFacadeImplementation --> DataAccess
-ApplicationLauncher --> BLFactory
-ApplicationLauncher --> ConfigXML : mode
-BLFactory o--> Creator : local / remote
+RemoteFacade --> RemoteBLFacade : delega SOAP
+note bottom of BLFactory
+ Una sola factoria parametrizada, sin clases anidadas.
+ Los metodos protegidos de creacion se pueden
+ sobrescribir en las pruebas para devolver mocks.
+end note
 @enduml
