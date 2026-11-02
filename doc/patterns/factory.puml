@@ -1,0 +1,32 @@
+@startuml
+abstract class "BLFactory.Creator" as Creator {
+ +create(): BLFacade
+}
+class "BLFactory.LocalCreator" as LocalCreator
+class "BLFactory.RemoteCreator" as RemoteCreator
+interface BLFacade {
+ +getSalesIterator(desc): ExtendedIterator<Sale>
+}
+interface RemoteBLFacade
+class BLFacadeImplementation
+class RemoteFacade
+class BLFactory {
+ +getBusinessLogicFactory(isLocal): BLFacade
+}
+class ApplicationLauncher
+class DataAccess
+class ConfigXML
+Creator <|-- LocalCreator
+Creator <|-- RemoteCreator
+Creator ..> BLFacade : creates
+LocalCreator ..> BLFacadeImplementation : creates
+RemoteCreator ..> RemoteFacade : creates
+BLFacade <|.. BLFacadeImplementation
+BLFacade <|.. RemoteFacade
+RemoteBLFacade <|-- BLFacade
+RemoteFacade --> RemoteBLFacade : SOAP delegate
+BLFacadeImplementation --> DataAccess
+ApplicationLauncher --> BLFactory
+ApplicationLauncher --> ConfigXML : mode
+BLFactory o--> Creator : local / remote
+@enduml

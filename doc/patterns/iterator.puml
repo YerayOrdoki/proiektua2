@@ -1,0 +1,29 @@
+@startuml
+interface "Iterator<T>" as Iterator
+interface "ExtendedIterator<T>" as ExtendedIterator {
+ +previous(): T
+ +hasPrevious(): boolean
+ +goFirst(): void
+ +goLast(): void
+}
+class "ListExtendedIterator<T>" as ListExtendedIterator {
+ -elements: List<T>
+ -cursor: int
+ +next(): T
+ +previous(): T
+}
+interface BLFacade {
+ +getSalesIterator(desc): ExtendedIterator<Sale>
+}
+class BLFacadeImplementation
+class RemoteFacade
+class PatternsDemo
+Iterator <|-- ExtendedIterator
+ExtendedIterator <|.. ListExtendedIterator
+BLFacade ..> ListExtendedIterator : snapshot(getSales(desc))
+BLFacade <|.. BLFacadeImplementation
+BLFacade <|.. RemoteFacade
+PatternsDemo --> BLFacade
+PatternsDemo --> ExtendedIterator : traverses
+ListExtendedIterator *--> "List<Sale>" : membership snapshot
+@enduml

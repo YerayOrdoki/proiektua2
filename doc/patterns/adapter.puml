@@ -1,0 +1,28 @@
+@startuml
+interface TableModel <<Target>>
+abstract class AbstractTableModel
+class JTable <<Client>>
+class SellerAdapter <<Adapter>> {
+ -sales: List<Sale>
+ +getRowCount(): int
+ +getColumnCount(): int
+ +getColumnClass(column): Class
+ +getValueAt(row,column): Object
+}
+class Seller <<Adaptee>> {
+ +getSales(): List<Sale>
+}
+class Sale {
+ +getTitle(): String
+ +getPrice(): float
+}
+class SellerTable
+TableModel <|.. AbstractTableModel
+AbstractTableModel <|-- SellerAdapter
+JTable --> TableModel
+SellerTable *--> JTable
+SellerTable ..> SellerAdapter : creates
+SellerAdapter ..> Seller : reads sales
+SellerAdapter o--> Sale : snapshot list
+Seller "1" o--> "*" Sale
+@enduml
